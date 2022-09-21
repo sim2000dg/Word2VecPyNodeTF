@@ -27,7 +27,7 @@ class algorithm_param:
                                                                                                             and the number that can be set determines the \"radius\" \
                                                                                                             of the window, meaning that the actual number of context words considered is twice what is inserted.")
      
-    negative_sample_int = knext.IntParameter(label="Number of negative samples", default_value=5, min_value=1, description="The negative sample approach is a way to simplify the computational complexity \
+    negative_sample_int = knext.IntParameter(label="Number of negative samples", default_value=5, min_value=1, description="The negative sampling approach is a way to simplify the computational complexity \
                                                                                                                              of vanilla Word2Vec while trying to introduce noise in the models in order to regularize it. \
                                                                                                                              You can choose the number of negative samples.")
                                                                                                                              
@@ -80,7 +80,7 @@ class Word2VecLearner:
     Currently, using the GPU is not allowed for hierarchical softmax training; the combination of the two prevents the node from being executed.
     """
     
-    def is_string (column):  # Filter columns visible in the column_param for numeric ones
+    def is_string (column):  # Filter columns visible in the column_param. Only string ones are visible
         return (
             column.ktype == knext.string()
         )
@@ -178,18 +178,17 @@ class Word2VecLearner:
         with tf.device(self.default_device):
             if self.word2vec_conf.group_1.algorithm_selection == "skip-gram":
                 target_context_skipgr = skip_gram_obs_builder(integer_corpus, tf.constant(self.word2vec_conf.group_1.window_size, dtype=tf.int64)).numpy()
-                exec_context.set_progress(0.40, message= "Scan of the corpus to build skip-gram samples completed")
+                exec_context.set_progress(0.40, message= "Scan of the corpus to build skip-gram pairs completed")
             if self.word2vec_conf.group_1.algorithm_selection == "CBOW":
                 context_target_CBOW = CBOW_obs_builder(integer_corpus, tf.constant(self.word2vec_conf.group_1.window_size, dtype=tf.int64)).numpy()
-                exec_context.set_progress(0.40, message= "Scan of the corpus to build CBOW samples completed")
+                exec_context.set_progress(0.40, message= "Scan of the corpus to build CBOW pairs completed")
         
-            # If negative sampling, we calculate the probability of a token being sampled as negative class
-            if not self.word2vec_conf.group_1.hierarchical_soft:
-                tf_table["sampling_prob"] = (tf_table["TF"]/tf_table["TF"].sum())**(3/4)
-                tf_table["sampling_prob"] = tf_table["sampling_prob"]/(tf_table["sampling_prob"].sum())
-                
-            
-        # Sampling with np random choice and weights
+        # If negative sampling, we calculate the probability of a token being sampled as negative class
+        if not self.word2vec_conf.group_1.hierarchical_soft:
+            tf_table["sampling_prob"] = (tf_table["TF"]/tf_table["TF"].sum())**(3/4)
+            tf_table["sampling_prob"] = tf_table["sampling_prob"]/(tf_table["sampling_prob"].sum())
+        
+            # Sampling with np random choice and weights
             negative_sampl = list()
             sampling_vector = np.array(range(2, len(tf_table)+2))
             for _ in range(len(target_context_skipgr)):
@@ -197,7 +196,6 @@ class Word2VecLearner:
                                                                   replace = False, p = tf_table["sampling_prob"], shuffle=False))
             negative_sampl = np.array(negative_sampl)
         
-                        
             # Create labels. For negative sampling the first is 1, the others are 0s
             labels = [1]+[0]*self.word2vec_conf.group_1.negative_sample_int
             labels = np.repeat(np.expand_dims(labels, axis=0), repeats = len(negative_sampl), axis = 0)
