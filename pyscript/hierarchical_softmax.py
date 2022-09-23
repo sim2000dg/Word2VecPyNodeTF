@@ -2,7 +2,7 @@ import bisect
 
 # This class is the brick of our hierarchical softmax implementation
 class Node:
-    def __init__(self, key:str|int, frequency:int, right_child:"None|Node"=None, left_child:"None|Node"=None) -> None:
+    def __init__(self, key:int, frequency:int, right_child:"None|Node"=None, left_child:"None|Node"=None) -> None:
         self.key = key
         self.frequency = frequency
         self.right_child = right_child
@@ -12,7 +12,7 @@ class Node:
 # This classic recursive method returns the path in reverse order along with a 
 # succession of 1 and 0 integers which represents the Huffman encoding
 
-    def path(self, query:str, log:list[int, str]) -> bool:
+    def path(self, query:str, log:list[int, int]) -> bool:
         
         if self.key == query: 
             return True
@@ -48,7 +48,7 @@ class Tree:
         i = -1
         while len(word_fr) > 1: 
             couple = word_fr.pop(), word_fr.pop() # Get the last elements from the list, remove them
-            # The new node is a node with a unique integer as string key and with the frequency attribute equal to the sum of the frequencies of its children
+            # The new node is a node with a unique integer as key and with the frequency attribute equal to the sum of the frequencies of its children
             new_node = Node(i, couple[0].frequency+couple[1].frequency, couple[1], couple[0]) 
             pointer = new_node # Pointer to the new root
             # The following is a way to reduce time complexity, since the list is already sorted 
@@ -60,8 +60,9 @@ class Tree:
     # This is basically a wrapper around the path method of the Node class
     # It also implements a lookup dictionary at object variable level 
     # to save the paths and speed up the retrieval of the paths for subsequent calls to the method with the same query
-    def path_finder(self, query:str) -> list[int, int]:
+    def path_finder(self, query:int) -> list[int, int]:
         log = self.lookup_dict.get(query, False)
+        # Remember that a non-empty list evaluates to True
         if not log:
             log = list()
             self.root.path(query, log)
