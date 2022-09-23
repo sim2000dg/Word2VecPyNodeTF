@@ -107,7 +107,9 @@ class Word2VecLearner:
         # raise warning if no column is selected for input and first string one is considered
         if self.input_column is None:
             configuration_context.set_warning("Autoguess, using the first string column of the input table")
-        
+        elif input_table_1[self.input_column].ktype != knext.string():  # Users may change the data type of a columnr retaining the same name, without this check things would break in that case
+            raise knext.InvalidParametersError("The column you previously selected is no longer of string type")
+            
         
         # If GPU is selected for fit and hierarchical softmax is also, the fit WILL fail, due to partial incompatibility of the Tensorflow engine on GPU
         # with ragged tensors. This will hopefully be solved sooner or later by the TF devs, but for now it is not possible and the train 
@@ -133,7 +135,7 @@ class Word2VecLearner:
         
         # If input column not specified, use the first one which is string type
         if self.input_column is None:
-            self.input_column = [x.ktype for x in list(input_1.schema) if x.ktype == knext.string()][0]   
+            self.input_column = [x.name for x in list(input_1.schema) if x.ktype == knext.string()][0]   
             
      
         # Reading the input and converting it to a Pandas Dataframe, then getting a Series of strings by using the key from the ColumParameter selection
@@ -162,12 +164,16 @@ class Word2VecLearner:
         tf_table = tf_table[tf_table["TF"]>=self.word2vec_conf.group_2.minimum_freq]
         
         exec_context.set_progress(0.10, message = "Sampling and filtering on the vocabulary completed")
+        if exec_context.is_canceled():
+            raise RuntimeError("Execution terminated by user")
         
         # We turn the text data into integers that are then digestable by the Keras Embedding Layer
         with tf.device(self.default_device):
             vectorizer = tf.keras.layers.TextVectorization(vocabulary=tf_table["Token"], standardize = None, ragged=True)    
             integer_corpus = vectorizer(corpus)
             exec_context.set_progress(0.15)
+            if exec_context.is_canceled():
+                raise RuntimeError("Execution terminated by user")
        
         
         # Add a column to the table for the integer token of each word
@@ -182,6 +188,9 @@ class Word2VecLearner:
             if self.word2vec_conf.group_1.algorithm_selection == "CBOW":
                 context_target_CBOW = CBOW_obs_builder(integer_corpus, tf.constant(self.word2vec_conf.group_1.window_size, dtype=tf.int64)).numpy()
                 exec_context.set_progress(0.40, message= "Scan of the corpus to build CBOW pairs completed")
+        
+        if exec_context.is_canceled():
+            raise RuntimeError("Execution terminated by user")
         
         # If negative sampling, we calculate the probability of a token being sampled as negative class
         if not self.word2vec_conf.group_1.hierarchical_soft:
@@ -209,6 +218,7 @@ class Word2VecLearner:
             training_label = tf.constant(labels, dtype=tf.int64)
             
             exec_context.set_progress(0.60, message="Negative sampling completed. Train is about to start...")
+
                 
         
         # If hierarchical softmax, we call the factory method of the Tree class from the hierarchical softmax module
@@ -243,11 +253,14 @@ class Word2VecLearner:
                 else: 
                     input_hr.append(row[0:-1])
             training_input = tf.constant(input_hr)
-            training_output = tf.ragged.constant(tokens_hr)
-            training_label = tf.ragged.constant(labels_hr)
+            training_output = tf.ragged.constant(tokens_hr, row_splits_dtype=tf.int32)
+            training_label = tf.ragged.constant(labels_hr, row_splits_dtype=tf.int32)
             exec_context.set_progress(0.6, "Hierarchical Softmax data structure built, path to leaves extracted. Train is about to start...")
             
-        
+            
+        if exec_context.is_canceled():
+            raise RuntimeError("Execution terminated by user")
+            
         # Depending on the algorithm selection (Skip-gram or CBOW) two different model classes are used for training. The classes are loaded from the utility_tf_word2vec module
         if self.word2vec_conf.group_1.algorithm_selection == "skip-gram":
             model = Word2Vec_skipgram_keras(vectorizer.vocabulary_size(), self.word2vec_conf.group_1.embedding_size, self.word2vec_conf.group_1.hierarchical_soft, self.word2vec_conf.group_1.negative_sample_int)

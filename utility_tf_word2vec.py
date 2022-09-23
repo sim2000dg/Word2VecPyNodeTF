@@ -58,8 +58,8 @@ def CBOW_obs_builder(encoded_corpus:tf.RaggedTensor, window_radius:tf.Tensor) ->
                 if context_index == i:
                     continue
                 if context_index < 0 or context_index > sequence_len-1:
-                    # context = tf.constant(0, dtype=tf.int64)
-                    # context_array = context_array.write(z, context)
+                    context = tf.constant(0, dtype=tf.int64)
+                    context_array = context_array.write(z, context)
                     z+=1
                     continue
                 context = sequence[context_index]
@@ -78,8 +78,8 @@ def CBOW_obs_builder(encoded_corpus:tf.RaggedTensor, window_radius:tf.Tensor) ->
             else:
                 filter_bool = not filter_bool
             word = tf.expand_dims(word, 0)
-            cbow_sample = tf.concat([context_set, word], 0)
-            final_array = final_array.write(m, cbow_sample)
+            cbow_unit = tf.concat([context_set, word], 0)
+            final_array = final_array.write(m, cbow_unit)
             context_array = context_array.close()
             i+=1
             m+=1
@@ -113,11 +113,11 @@ class Word2Vec_skipgram_keras(tf.keras.Model):
         context = self.output_embedding(context)
         
         logits = self.multiplicator_elwise([target, context])
-        logits = tf.math.reduce_sum(logits, axis = 2)
+        logits = tf.math.reduce_sum(logits, axis = -1)
         
         probs = self.sigmoid(logits)
         return probs
-    
+            
 
 
 # Model definition for CBOW model
@@ -146,7 +146,7 @@ class Word2Vec_CBOW_keras(tf.keras.Model):
         target = self.output_embedding(target)
         
         logits = self.multiplicator_elwise([context, target])
-        logits = tf.math.reduce_sum(logits, axis = 2)
+        logits = tf.math.reduce_sum(logits, axis = -1)
         
         probs = self.sigmoid(logits)
         return probs
@@ -162,32 +162,36 @@ class CallbackforKNIME(tf.keras.callbacks.Callback):
         self.epoch_counter = 0
         self.epoch_number = epoch_number
         
-    def on_train_begin(self, *args, **kwargs): 
+    def on_train_begin(self, *args, **kwargs)-> None: 
         self.exec_context.set_progress(0.62, message="Training has begun")
+        if self.exec_context.is_canceled():
+            raise RuntimeError("Execution terminated by user")
     
-    def on_epoch_end(self, *args, **kwargs):
+    def on_epoch_end(self, *args, **kwargs)-> None:
         self.epoch_counter += 1
         if self.epoch_counter == 1:
             self.exec_context.set_progress(0.62+0.35*self.epoch_counter/self.epoch_number, message = f"{self.epoch_counter} epoch completed")
         else:
             self.exec_context.set_progress(0.62+0.35*self.epoch_counter/self.epoch_number, message = f"{self.epoch_counter} epochs completed")
     
-    def on_train_batch_end(self, *args, **kwargs):
-        pass
+    def on_train_batch_end(self, *args, **kwargs)-> None:
+        if self.exec_context.is_canceled():
+            raise RuntimeError("Execution terminated by user")
 
     
         
 # Custom losses. Necessary since the BinaryCrossEntropy loss in Keras takes the mean of the element-wise cross-entropies computed along the rows 
 # This leads to losing the information regarding the length of the path in the Huffman tree for the hierarchical softmax approach
 # This is solved by performing an Hadamard product between the vector of the averages and the vector of the row lengths for the ragged tensor of the batch labels/logits
+
 def custom_loss_word2vec(hier:bool):
     def hier_func(y_true, y_pred): 
         loss = tf.keras.losses.BinaryCrossentropy(reduction = tf.keras.losses.Reduction.NONE)(y_true, y_pred)
         loss = loss*tf.cast(y_true.row_lengths(), tf.float32)
         loss = tf.reduce_mean(loss, axis=0)
-        return loss 
+        return loss   
+            
     
- 
     def ns(y_true, y_pred):
         loss = tf.keras.losses.BinaryCrossentropy(reduction = tf.keras.losses.Reduction.NONE)(y_true, y_pred)
         loss = tf.reduce_mean(loss, axis=0)
