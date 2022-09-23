@@ -1,0 +1,16 @@
+name: word2vec_kni
+channels:
+  - conda-forge
+  - knime
+dependencies:
+  - python>=3.10
+  - scikit-learn=1.1.2
+  - knime-extension
+  - py4j
+  - nomkl
+  - python-dateutil
+  - pyarrow
+  - markdown
+  - pandas
+  - tensorflow=2.9.1
+   

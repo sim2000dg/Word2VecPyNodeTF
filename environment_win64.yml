@@ -1,0 +1,14 @@
+name: word2vec_kni
+channels:
+  - conda-forge
+  - knime
+dependencies:
+  - python=3.10.5
+  - scikit-learn=1.1.2
+  - knime-extension
+  - knime-python-base
+  - cudnn=8.4.1.50
+  - cudatoolkit=11.7.0
+  - pip:
+    - tensorflow==2.10.0
+
