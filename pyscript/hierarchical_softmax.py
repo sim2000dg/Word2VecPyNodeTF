@@ -11,8 +11,9 @@ class Node:
 
 # This classic recursive method returns the path in reverse order along with a 
 # succession of 1 and 0 integers which represents the Huffman encoding
+# This function relies on side effects (appending to a list which is not a local variable)
 
-    def path(self, query:str, log:list[int, int]) -> bool:
+    def path(self, query:str, log:list) -> bool:
         
         if self.key == query: 
             return True
