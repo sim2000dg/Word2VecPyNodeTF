@@ -1,14 +1,13 @@
 name: word2vec_tf # Will be concatenated with the group_id to an ID
 author: Simone Di Gregorio
 env_yml_path:
-  osx-64: C:\Users\simone.digregorio\environment_macos.yml 
-  win-64: C:\Users\simone.digregorio\environment_win64.yml
-  linux-64: C:\Users\simone.digregorio\environment_linux.yml
-  osx-64: C:\Users\simone.digregorio\environment_macos.yml
+  osx-64: bundlingymls/environment_macos.yml 
+  win-64: bundlingymls/environment_win64.yml
+  linux-64: bundlingymls/environment_linux.yml
 extension_module: word2vec_pynode # The .py Python module containing the nodes of your extension
 description: Word2Vec with Tensorflow # Human readable bundle name / description
 long_description: This extension contains a Python-based node which performs Word2Vec with both skip-gram and CBOW algorithms, letting the user choose between hierarchical softmax and negative sampling as approaches to perform the actual fit. The underlying engine for the fit and for some of the pre-processing is Tensorflow.
 group_id: org.knime
-version: 0.5.0 # Version of this Python node extension
+version: 0.6.0 # Version of this Python node extension
 vendor: KNIME AG, Zurich, Switzerland
 license_file: LICENSE.TXT # Best practice: put your LICENSE.TXT next to the knime.yml; otherwise you would need to change to path/to/LICENSE.txt
