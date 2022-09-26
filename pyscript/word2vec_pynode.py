@@ -77,7 +77,6 @@ class Word2VecLearner:
     To perform the actual training, hierarchical softmax and negative sampling are both available.
     The node uses Tensorflow as engine to speed up the pre-processing and to fit the model. 
     Given the presence of a CUDA compatible NVIDIA GPU, training can be performed on the GPU. 
-    Currently, using the GPU is not allowed for hierarchical softmax training; the combination of the two prevents the node from being executed.
     """
     
     def is_string (column):  # Filter columns visible in the column_param. Only string ones are visible
@@ -97,25 +96,21 @@ class Word2VecLearner:
     # Search for devices which are visible by Tensorflow, lets the user choose which to use. Defaults to first one, which is CPU
     devices_options = [":".join(x.name.split(":")[-2:]) for x in tf.config.list_physical_devices()]
     default_device = ":".join(tf.config.list_logical_devices()[0].name.split(":")[-2:])
-    tf_device = knext.StringParameter(label="Device for Tensorflow model fit", description="Choose the device where to run the fit for the Word2Vec model; only the visible devices are available.", 
+    tf_device = knext.StringParameter(label="Device for Tensorflow model fit", description="Choose the device where to run the fit for the Word2Vec model; only the visible devices are available. \
+                                                                                            Notice that the indexes next to the device name are just identifiers for the device itself.", 
                                                 enum = devices_options, default_value=default_device)
 
     def configure(self, configuration_context, input_table_1):
+        
         if knext.string() not in [x.ktype for x in list(input_table_1)]:
             raise knext.InvalidParametersError("The input table does not have any string columns. You need to have a string column for this node.")
         
         # raise warning if no column is selected for input and first string one is considered
         if self.input_column is None:
             configuration_context.set_warning("Autoguess, using the first string column of the input table")
-        elif input_table_1[self.input_column].ktype != knext.string():  # Users may change the data type of a columnr retaining the same name, without this check things would break in that case
+        elif input_table_1[self.input_column].ktype != knext.string():  # Users may change the data type of a column retaining the same name, without this check things would break in that case
             raise knext.InvalidParametersError("The column you previously selected is no longer of string type")
             
-        
-        # If GPU is selected for fit and hierarchical softmax is also, the fit WILL fail, due to partial incompatibility of the Tensorflow engine on GPU
-        # with ragged tensors. This will hopefully be solved sooner or later by the TF devs, but for now it is not possible and the train 
-        # for hierarchical must run on CPU
-        if "GPU" in self.tf_device and self.word2vec_conf.group_1.hierarchical_soft:
-            raise knext.InvalidParametersError("Hierarchical Softmax training on GPU is currently not supported due to TF limitations.")
             
         return knext.Schema(ktypes=[knext.string(), knext.ListType(knext.double())], names=["Token", "Embedding"])
   
@@ -125,7 +120,7 @@ class Word2VecLearner:
         
         # Set seed if needed
         if self.set_seed:
-            # Sets all random seeds for the program (Python, NumPy, and TensorFlow)
+            # Sets all random seeds for the program (Python, NumPy legacy and TensorFlow)
             tf.keras.utils.set_random_seed(self.seed)
             # Initialize the new Numpy generator and set a seed if needed
             random_gen = np.random.default_rng(self.seed)
