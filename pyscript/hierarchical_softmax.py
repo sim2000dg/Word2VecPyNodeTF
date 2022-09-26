@@ -49,21 +49,22 @@ class Tree:
         i = -1
         while len(word_fr) > 1: 
             couple = word_fr.pop(), word_fr.pop() # Get the last elements from the list, remove them
-            # The new node is a node with a unique integer as key and with the frequency attribute equal to the sum of the frequencies of its children
+            # The new node is a node with a unique integer as key and with the frequency 
+            # attribute equal to the sum of the frequencies of its children
             new_node = Node(i, couple[0].frequency+couple[1].frequency, couple[1], couple[0]) 
             pointer = new_node # Pointer to the new root
             # The following is a way to reduce time complexity, since the list is already sorted 
             # and we just need to find the right insertion point to keep the sorted order
             bisect.insort(word_fr, new_node, key = lambda x: - x.frequency)
             i -= 1
-        return Tree(pointer)
+        return cls(pointer)
     
     # This is basically a wrapper around the path method of the Node class
     # It also implements a lookup dictionary at object variable level 
     # to save the paths and speed up the retrieval of the paths for subsequent calls to the method with the same query
     def path_finder(self, query:int) -> list[int, int]:
         log = self.lookup_dict.get(query, False)
-        # Remember that a non-empty list evaluates to True
+        # Remember that a non-empty list evaluates to TrueS
         if not log:
             log = list()
             self.root.path(query, log)
