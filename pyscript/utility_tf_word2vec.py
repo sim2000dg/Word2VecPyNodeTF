@@ -182,12 +182,14 @@ class CallbackforKNIME(tf.keras.callbacks.Callback):
         
 # Custom losses. Necessary since the BinaryCrossEntropy loss in Keras takes the mean of the element-wise cross-entropies computed along the rows 
 # This leads to losing the information regarding the length of the path in the Huffman tree for the hierarchical softmax approach
-# This is solved by performing an Hadamard product between the vector of the averages and the vector of the row lengths for the ragged tensor of the batch labels/logits
+# This is solved by multiplying the mean for the number of columns in the output/label tensor (this reverts the mean to the sum)
 
 def custom_loss_word2vec(hier:bool):
     def hier_func(y_true, y_pred): 
-        loss = tf.keras.losses.BinaryCrossentropy(reduction = tf.keras.losses.Reduction.NONE)(y_true, y_pred)
-        loss = loss*tf.cast(y_true.row_lengths(), tf.float32)
+        y_true_padded = y_true.to_tensor()
+        y_pred_padded = y_pred.to_tensor()
+        loss = tf.keras.losses.BinaryCrossentropy(reduction = tf.keras.losses.Reduction.NONE)(y_true_padded, y_pred_padded)
+        loss = loss*tf.cast(tf.shape(y_true_padded)[1], tf.float32)
         loss = tf.reduce_mean(loss, axis=0)
         return loss   
             
