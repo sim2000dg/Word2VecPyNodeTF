@@ -64,7 +64,7 @@ class Tree:
     # to save the paths and speed up the retrieval of the paths for subsequent calls to the method with the same query
     def path_finder(self, query:int) -> list[int, int]:
         log = self.lookup_dict.get(query, False)
-        # Remember that a non-empty list evaluates to TrueS
+        # Remember that a non-empty list evaluates to True
         if not log:
             log = list()
             self.root.path(query, log)
