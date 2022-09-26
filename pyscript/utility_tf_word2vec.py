@@ -1,5 +1,6 @@
 import tensorflow as tf
 import knime_extension as knext
+from types import FunctionType
 
 
 # Function for building target-context pairs to train a skip-gram model (TF graph execution)
@@ -105,7 +106,7 @@ class Word2Vec_skipgram_keras(tf.keras.Model):
         self.multiplicator_elwise = tf.keras.layers.Multiply()
         self.sigmoid = tf.keras.layers.Activation(tf.keras.activations.sigmoid)
         
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs:list[tf.Tensor, tf.RaggedTensor|tf.Tensor], *args, **kwargs) -> tf.RaggedTensor|tf.Tensor:
         target = self.input_word(inputs[0])
         target = self.input_embedding(target)
         
@@ -137,7 +138,7 @@ class Word2Vec_CBOW_keras(tf.keras.Model):
         self.multiplicator_elwise = tf.keras.layers.Multiply()
         self.sigmoid = tf.keras.layers.Activation(tf.keras.activations.sigmoid)
     
-    def call(self, inputs:list[tf.Tensor, tf.RaggedTensor], *args, **kwargs) -> tf.RaggedTensor:
+    def call(self, inputs:list[tf.Tensor, tf.RaggedTensor|tf.Tensor], *args, **kwargs) -> tf.RaggedTensor|tf.Tensor:
         context = self.input_context(inputs[0])
         context = self.input_embedding(context)
         context = tf.math.reduce_mean(context, axis = 1)
@@ -184,8 +185,8 @@ class CallbackforKNIME(tf.keras.callbacks.Callback):
 # This leads to losing the information regarding the length of the path in the Huffman tree for the hierarchical softmax approach
 # This is solved by multiplying the mean by the number of columns in the output/label tensor (this reverts the mean to the sum)
 
-def custom_loss_word2vec(hier:bool):
-    def hier_func(y_true, y_pred): 
+def custom_loss_word2vec(hier:bool) -> FunctionType:
+    def hier_func(y_true, y_pred) -> tf.Tensor: 
         y_true_padded = y_true.to_tensor()
         y_pred_padded = y_pred.to_tensor()
         loss = tf.keras.losses.BinaryCrossentropy(reduction = tf.keras.losses.Reduction.NONE)(y_true_padded, y_pred_padded)
@@ -194,7 +195,7 @@ def custom_loss_word2vec(hier:bool):
         return loss   
             
     
-    def ns(y_true, y_pred):
+    def ns(y_true, y_pred) -> tf.Tensor:
         loss = tf.keras.losses.BinaryCrossentropy(reduction = tf.keras.losses.Reduction.NONE)(y_true, y_pred)
         loss = tf.reduce_mean(loss, axis=0)
         return loss
