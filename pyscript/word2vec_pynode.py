@@ -110,6 +110,11 @@ class Word2VecLearner:
             configuration_context.set_warning("Autoguess, using the first string column of the input table")
         elif input_table_1[self.input_column].ktype != knext.string():  # Users may change the data type of a column retaining the same name, without this check things would break in that case
             raise knext.InvalidParametersError("The column you previously selected is no longer of string type")
+        
+        # What happens if node settings have a device not available on local machine? 
+        if self.tf_device not in self.devices_options: 
+            configuration_context.set_warning("The device previously chosen is not available on the local machine, reverting to execution on default device")
+            self.tf_device = self.default_device
             
             
         return knext.Schema(ktypes=[knext.string(), knext.ListType(knext.double())], names=["Token", "Embedding"])
