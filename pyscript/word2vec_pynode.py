@@ -95,7 +95,7 @@ class Word2VecLearner:
     
     # Search for devices which are visible by Tensorflow, lets the user choose which to use. Defaults to first one, which is CPU
     devices_options = [":".join(x.name.split(":")[-2:]) for x in tf.config.list_physical_devices()]
-    default_device = ":".join(tf.config.list_logical_devices()[0].name.split(":")[-2:])
+    default_device = devices_options[0]
     tf_device = knext.StringParameter(label="Device for Tensorflow model fit", description="Choose the device where to run the fit for the Word2Vec model; only the visible devices are available. \
                                                                                             Notice that the indexes next to the device name are just identifiers for the device itself.", 
                                                 enum = devices_options, default_value=default_device)
