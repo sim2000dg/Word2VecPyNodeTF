@@ -12,8 +12,14 @@ import hierarchical_softmax
 from utility_tf_word2vec import skip_gram_obs_builder, CBOW_obs_builder, Word2Vec_skipgram_keras, Word2Vec_CBOW_keras, custom_loss_word2vec, CallbackforKNIME
 
 
-python_category = knext.category(path = "/", level_id="python_dev_nodes", name="Python based nodes", description="", icon="word2vec.png")
-    
+python_category = knext.category(
+    path="/community",
+    level_id="word2vec",
+    name="Word2Vec",
+    description="",
+    icon="word2vec.png",
+)
+
 
 @knext.parameter_group(label="Algorithm Hyperparameters")
 class algorithm_param:
