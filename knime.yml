@@ -11,4 +11,4 @@ long_description: This extension contains a Python-based node which performs Wor
 group_id: it.simonedigregorio
 version: 0.6.0 # Version of this Python node extension
 vendor: simonedigregorio
-license_file: LICENSE.TXT # Best practice: put your LICENSE.TXT next to the knime.yml; otherwise you would need to change to path/to/LICENSE.txt
+license_file: LICENSE.TXT
