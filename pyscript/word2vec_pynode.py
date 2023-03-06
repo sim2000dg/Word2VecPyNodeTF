@@ -451,7 +451,7 @@ class Word2VecLearner:
         # Notice the callbacks argument in the fit, which is used to interact with KNIME during training (specifically, the progress bar of the node)
         # A callback keras class in the utility_tf_word2vec module is defined for that
         model.compile(
-            optimizer="adam",
+            optimizer=tf.keras.optimizers.Adam(learning_rate=self.training_conf.adam_startinglr),
             loss=custom_loss_word2vec(self.word2vec_conf.group_1.hierarchical_soft),
             metrics=[],
         )
