@@ -1,0 +1,17 @@
+name: word2vec_kni
+channels:
+  - conda-forge
+  - knime
+dependencies:
+  - python>=3.10
+  - scikit-learn=1.1.2
+  - knime-extension
+  - py4j
+  - nomkl
+  - python-dateutil
+  - pyarrow
+  - markdown
+  - pandas
+  - pip:
+    - tensorflow-macos==2.10.0
+    - tensorflow-metal==0.6.0
