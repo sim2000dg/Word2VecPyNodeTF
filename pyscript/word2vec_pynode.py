@@ -3,7 +3,7 @@ import sys
 import os
 
 sys.path.append(os.path.realpath(__file__))
-import knime_extension as knext
+import knime.extension as knext
 import pandas as pd
 
 LOGGER = logging.getLogger(__name__)
@@ -20,7 +20,6 @@ from utility_tf_word2vec import (
     CallbackforKNIME,
 )
 
-
 python_category = knext.category(
     path="/community",
     level_id="word2vec",
@@ -32,7 +31,6 @@ python_category = knext.category(
 
 @knext.parameter_group(label="Algorithm Hyperparameters")
 class algorithm_param:
-
     embedding_size = knext.IntParameter(
         label="Embedding size",
         default_value=20,
@@ -77,7 +75,6 @@ class algorithm_param:
 
 @knext.parameter_group(label="Dictionary Parameters")
 class dictionary_param:
-
     word_survival_bool = knext.BoolParameter(
         label="Word Survival Function",
         default_value=True,
@@ -88,8 +85,8 @@ class dictionary_param:
     word_survival_rate = knext.DoubleParameter(
         label="Sampling rate for Word Survival Function (if flagged)",
         max_value=0.1,
-        min_value=10**-10,
-        default_value=10**-4,
+        min_value=10 ** -10,
+        default_value=10 ** -4,
         description="Set the sampling rate for the Word Survival function, the higher it \
                                                          gets the more words are included in the dictionary. Default value is 10^-3. Max value is 0.1.",
     )
@@ -105,7 +102,6 @@ class dictionary_param:
 
 @knext.parameter_group(label="Training parameters")
 class training_param:
-
     nr_epoch = knext.IntParameter(
         label="Epochs",
         min_value=1,
@@ -118,17 +114,16 @@ class training_param:
         default_value=32,
         description="The batch size you want to set to train the Word2Vec model.",
     )
-    adam_startinglr = knext.DoubleParameter(
+    adam_lr = knext.DoubleParameter(
         label="Adam learning rate",
         description="Set the learning rate for the Adam optimizer. The actual step in the parameter space is dynamic during training.",
-        min_value=10**-10,
-        default_value=10**-4,
+        min_value=10 ** -10,
+        default_value=10 ** -4,
     )
 
 
 @knext.parameter_group(label="Word2Vec parameters")
 class Word2VecParam:
-
     group_1 = algorithm_param()
     group_2 = dictionary_param()
 
@@ -156,7 +151,7 @@ class Word2VecLearner:
     """
 
     def is_string(
-        column,
+            column,
     ):  # Filter columns visible in the column_param. Only string ones are visible
         return column.ktype == knext.string()
 
@@ -206,7 +201,7 @@ class Word2VecLearner:
                 "Autoguess, using the first string column of the input table"
             )
         elif (
-            input_table_1[self.input_column].ktype != knext.string()
+                input_table_1[self.input_column].ktype != knext.string()
         ):  # Users may change the data type of a column retaining the same name, without this check things would break in that case
             raise knext.InvalidParametersError(
                 "The column you previously selected is no longer of string type"
@@ -260,12 +255,12 @@ class Word2VecLearner:
         # The token column of the resulting table is the dictionary we are passing to TextVectorization Layer
         tf_table["RF"] = tf_table["TF"] / tf_table["TF"].sum()
         tf_table["keep_probability"] = (
-            (
-                (tf_table["RF"] / self.word2vec_conf.group_2.word_survival_rate)
-                ** (1 / 2)
-            )
-            + 1
-        ) * (self.word2vec_conf.group_2.word_survival_rate / tf_table["RF"])
+                                               (
+                                                       (tf_table["RF"] / self.word2vec_conf.group_2.word_survival_rate)
+                                                       ** (1 / 2)
+                                               )
+                                               + 1
+                                       ) * (self.word2vec_conf.group_2.word_survival_rate / tf_table["RF"])
         tf_table["keep_probability"] = [
             1 if elem > 1 else elem for elem in tf_table["keep_probability"]
         ]
@@ -297,21 +292,36 @@ class Word2VecLearner:
         # Add a column to the table for the integer token of each word
         tf_table["int_token"] = range(2, vectorizer.vocabulary_size())
 
-        # This part uses Tensorflow graph execution to dramatically speed up composition of target/context pairs. The functions used come from the utility_tf_word2vec module
+        # This part uses Tensorflow graph execution to dramatically speed up composition of target/context pairs.
+        # The functions used come from the utility_tf_word2vec module
+
         with tf.device(self.default_device):
+            # Accumulator variables, parameter weights etc. (everything which keeps some state) as
+            # Tensorflow variables
+            m = tf.Variable([0], dtype=tf.int32, shape=())
+            i = tf.Variable([0], dtype=tf.int64, shape=())
             if self.word2vec_conf.group_1.algorithm_selection == "skip-gram":
                 target_context_skipgr = skip_gram_obs_builder(
                     integer_corpus,
                     tf.constant(self.word2vec_conf.group_1.window_size, dtype=tf.int64),
+                    m,
+                    i
                 ).numpy()
                 exec_context.set_progress(
                     0.40,
                     message="Scan of the corpus to build skip-gram pairs completed",
                 )
             if self.word2vec_conf.group_1.algorithm_selection == "CBOW":
+                # z and filter_bool are additional variables needed for the control flow of the function
+                z = tf.Variable([0], dtype=tf.int32, shape=())
+                filter_bool = tf.Variable([True], dtype=tf.bool)
                 context_target_CBOW = CBOW_obs_builder(
                     integer_corpus,
                     tf.constant(self.word2vec_conf.group_1.window_size, dtype=tf.int64),
+                    m,
+                    i,
+                    z,
+                    filter_bool
                 ).numpy()
                 exec_context.set_progress(
                     0.40, message="Scan of the corpus to build CBOW pairs completed"
@@ -323,7 +333,7 @@ class Word2VecLearner:
         # If negative sampling, we calculate the probability of a token being sampled as negative class
         if not self.word2vec_conf.group_1.hierarchical_soft:
             tf_table["sampling_prob"] = (tf_table["TF"] / tf_table["TF"].sum()) ** (
-                3 / 4
+                    3 / 4
             )
             tf_table["sampling_prob"] = tf_table["sampling_prob"] / (
                 tf_table["sampling_prob"].sum()
@@ -451,7 +461,7 @@ class Word2VecLearner:
         # Notice the callbacks argument in the fit, which is used to interact with KNIME during training (specifically, the progress bar of the node)
         # A callback keras class in the utility_tf_word2vec module is defined for that
         model.compile(
-            optimizer=tf.keras.optimizers.Adam(learning_rate=self.training_conf.adam_startinglr),
+            optimizer=tf.keras.optimizers.Adam(learning_rate=self.training_conf.adam_lr),
             loss=custom_loss_word2vec(self.word2vec_conf.group_1.hierarchical_soft),
             metrics=[],
         )
@@ -473,4 +483,4 @@ class Word2VecLearner:
             dtype=object,
         )
 
-        return knext.Table.from_pandas(embeddings_table)
+        return knext.Table.from_pandas(embeddings_table)  # row id bool to add here as soon as extension is updated
