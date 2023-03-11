@@ -298,8 +298,8 @@ class Word2VecLearner:
         with tf.device(self.default_device):
             # Accumulator variables, parameter weights etc. (everything which keeps some state) as
             # Tensorflow variables
-            m = tf.Variable([0], dtype=tf.int32, shape=())
-            i = tf.Variable([0], dtype=tf.int64, shape=())
+            m = tf.Variable(0, dtype=tf.int32, shape=())
+            i = tf.Variable(0, dtype=tf.int64, shape=())
             if self.word2vec_conf.group_1.algorithm_selection == "skip-gram":
                 target_context_skipgr = skip_gram_obs_builder(
                     integer_corpus,
@@ -313,7 +313,7 @@ class Word2VecLearner:
                 )
             if self.word2vec_conf.group_1.algorithm_selection == "CBOW":
                 # z and filter_bool are additional variables needed for the control flow of the function
-                z = tf.Variable([0], dtype=tf.int32, shape=())
+                z = tf.Variable(0, dtype=tf.int32, shape=())
                 filter_bool = tf.Variable([True], dtype=tf.bool)
                 context_target_CBOW = CBOW_obs_builder(
                     integer_corpus,

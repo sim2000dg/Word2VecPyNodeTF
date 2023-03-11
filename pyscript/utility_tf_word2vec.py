@@ -13,11 +13,11 @@ def skip_gram_obs_builder(encoded_corpus: tf.RaggedTensor, window_radius: tf.Ten
                              element_shape=tf.TensorShape([2, ]))
     # zero_boundary = tf.constant([0], shape=(), dtype=tf.int64)
     for sequence in encoded_corpus:
-        i.assign([0])
+        i.assign(0)
         sequence_len = tf.shape(sequence, out_type=tf.int64)[0]
         for word in sequence:
             if word == 1:
-                i.assign_add([1])
+                i.assign_add(1)
                 continue
             window = tf.range(start=tf.math.reduce_max([i - window_radius, 0]),
                               limit=tf.math.reduce_min([i + window_radius + 1, sequence_len]))
@@ -28,8 +28,8 @@ def skip_gram_obs_builder(encoded_corpus: tf.RaggedTensor, window_radius: tf.Ten
                 if context != 1:
                     couple = tf.stack([word, context], axis=0)
                     couples = couples.write(m, couple)
-                    m.assign_add([1])
-            i.assign_add([1])
+                    m.assign_add(1)
+            i.assign_add(1)
     return couples.stack()[:m]
 
 
@@ -39,12 +39,12 @@ def CBOW_obs_builder(encoded_corpus: tf.RaggedTensor, window_radius: tf.Tensor, 
                      z: tf.Variable, filter_bool: tf.Variable) -> tf.Tensor:
     final_array = tf.TensorArray(tf.int64, size=tf.cast(tf.reduce_sum(encoded_corpus.row_lengths()), tf.int32))
     for sequence in encoded_corpus:
-        i.assign([0])
+        i.assign(0)
         sequence_len = tf.shape(sequence, out_type=tf.int64)
         for word in sequence:
-            z.assign([0])
+            z.assign(0)
             if word == 1:
-                i.assign_add([1])
+                i.assign_add(1)
                 continue
             window = tf.range(start=i - window_radius,
                               limit=i + window_radius + 1)
@@ -56,11 +56,11 @@ def CBOW_obs_builder(encoded_corpus: tf.RaggedTensor, window_radius: tf.Tensor, 
                 if context_index < 0 or context_index > sequence_len - 1:
                     context = tf.constant(0, dtype=tf.int64)
                     context_array = context_array.write(z, context)
-                    z.assign_add([1])
+                    z.assign_add(1)
                     continue
                 context = sequence[context_index]
                 context_array = context_array.write(z, context)
-                z.assign_add([1])
+                z.assign_add(1)
             context_set = context_array.stack()
             for integer in context_set:
                 if integer <= 1:
@@ -69,7 +69,7 @@ def CBOW_obs_builder(encoded_corpus: tf.RaggedTensor, window_radius: tf.Tensor, 
                     filter_bool.assign(tf.math.logical_not(filter_bool))
                     break
             if filter_bool:
-                i.assign_add([1])
+                i.assign_add(1)
                 continue
             else:
                 filter_bool.assign(tf.math.logical_not(filter_bool))
@@ -77,8 +77,8 @@ def CBOW_obs_builder(encoded_corpus: tf.RaggedTensor, window_radius: tf.Tensor, 
             cbow_unit = tf.concat([context_set, word], 0)
             final_array = final_array.write(m, cbow_unit)
             context_array = context_array.close()
-            i.assign_add([1])
-            m.assign_add([1])
+            i.assign_add(1)
+            m.assign_add(1)
     return final_array.stack()[:m]
 
 
@@ -169,10 +169,10 @@ class CallbackforKNIME(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, *args, **kwargs) -> None:
         if epoch == 1:
             self.exec_context.set_progress(0.62 + 0.35 * epoch / self.epoch_number,
-                                           message=f"{self.epoch_counter} epoch completed")
+                                           message=f"{epoch} epoch completed")
         else:
             self.exec_context.set_progress(0.62 + 0.35 * epoch / self.epoch_number,
-                                           message=f"{self.epoch_counter} epochs completed")
+                                           message=f"{epoch} epochs completed")
 
     def on_train_batch_end(self, *args, **kwargs) -> None:
         if self.exec_context.is_canceled():
