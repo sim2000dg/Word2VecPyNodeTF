@@ -9,6 +9,6 @@ extension_module: pyscript/word2vec_pynode # The .py Python module containing th
 description: Word2Vec with Tensorflow # Human readable bundle name / description
 long_description: This extension contains a Python-based node which performs Word2Vec with both skip-gram and CBOW algorithms, letting the user choose between hierarchical softmax and negative sampling as approaches to perform the actual fit. The underlying engine for the fit and for some of the pre-processing is Tensorflow.
 group_id: it.simonedigregorio
-version: 0.6.0 # Version of this Python node extension
+version: 0.6.2 # Version of this Python node extension
 vendor: simonedigregorio
 license_file: LICENSE.TXT
