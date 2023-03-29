@@ -167,6 +167,7 @@ class CallbackforKNIME(tf.keras.callbacks.Callback):
             raise RuntimeError("Execution terminated by user")
 
     def on_epoch_end(self, epoch, *args, **kwargs) -> None:
+        epoch += 1
         if epoch == 1:
             self.exec_context.set_progress(0.62 + 0.35 * epoch / self.epoch_number,
                                            message=f"{epoch} epoch completed")
